@@ -34,7 +34,7 @@ export default function RunRemindersButton() {
       </button>
 
       {success && (
-        <p className="text-sm text-emerald-600">
+        <p className="inline-block animate-fade-in rounded-md bg-white px-3 py-1 text-sm font-medium text-emerald-700 ring-1 ring-emerald-200 shadow-sm">
           Rappels envoyés avec succès ✅
         </p>
       )}
