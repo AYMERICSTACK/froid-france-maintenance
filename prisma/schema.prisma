@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum ContractStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum InterventionStatus {
+  TO_PLAN
+  PLANNED
+  DONE
+  CANCELLED
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model User {
+  id            String         @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String         @unique
+  passwordHash  String
+  role          UserRole       @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  interventions Intervention[]
+}
+
+model Client {
+  id         String     @id @default(cuid())
+  firstName  String
+  lastName   String
+  phone      String?
+  email      String?
+  address    String?
+  city       String?
+  postalCode String?
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  contracts  Contract[]
+  documents  Document[]
+}
+
+model Contract {
+  id                  String          @id @default(cuid())
+  clientId            String
+  equipmentType       String
+  brand               String?
+  model               String?
+  subscriptionDate    DateTime?
+  lastMaintenanceDate DateTime?
+  nextMaintenanceDate DateTime
+  frequencyMonths     Int             @default(12)
+  status              ContractStatus  @default(ACTIVE)
+  notes               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  client         Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  interventions  Intervention[]
+  reminders      Reminder[]
+  documents      Document[]
+}
+
+model Intervention {
+  id          String             @id @default(cuid())
+  contractId  String
+  userId      String?
+  plannedDate DateTime?
+  doneDate    DateTime?
+  status      InterventionStatus @default(TO_PLAN)
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Reminder {
+  id             String         @id @default(cuid())
+  contractId     String
+  type           String
+  scheduledFor   DateTime
+  sentAt         DateTime?
+  recipientEmail String
+  status         ReminderStatus @default(PENDING)
+  errorMessage   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id         String    @id @default(cuid())
+  name       String
+  fileUrl    String
+  mimeType   String?
+  size       Int?
+  clientId   String?
+  contractId String?
+  storagePath String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  client     Client?   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  contract   Contract? @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([contractId])
+}
