@@ -2,8 +2,9 @@ import { sendMaintenanceReminder } from "@/lib/email";
 
 export async function GET() {
   await sendMaintenanceReminder({
-    email: "tonmail@test.com",
-    name: "Client Test",
+    email: process.env.REMINDER_TO_EMAIL!,
+    clientName: "Client Test",
+    equipmentType: "Climatisation",
     date: new Date(),
   });
 

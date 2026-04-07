@@ -2,11 +2,13 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
+
     await prisma.intervention.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status: "DONE",
         doneDate: new Date(),
