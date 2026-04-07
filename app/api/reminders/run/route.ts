@@ -2,13 +2,19 @@ import { NextResponse } from "next/server";
 import { addDays, endOfDay, startOfDay } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { sendMaintenanceReminder } from "@/lib/email";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    const isCronCall = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
+
+    const user = await getCurrentUser();
+    const isDashboardUser = !!user;
+
+    if (!isCronCall && !isDashboardUser) {
       return NextResponse.json(
         { success: false, message: "Non autorisé." },
         { status: 401 },
@@ -110,6 +116,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
+      message: `${sentCount} rappel(s) envoyé(s), ${skippedCount} ignoré(s), ${failedCount} échec(s).`,
       stats: {
         found: contracts.length,
         sent: sentCount,

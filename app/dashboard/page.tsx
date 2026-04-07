@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getDaysUntilMaintenance } from "@/lib/contracts";
+import RunRemindersButton from "@/components/reminders/RunRemindersButton";
 import {
   AlertTriangle,
   CalendarClock,
@@ -62,7 +63,6 @@ export default async function DashboardPage() {
 
   return (
     <main className="space-y-6">
-      {/* HERO */}
       <section className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(135deg,#10233c_0%,#133a65_45%,#1a7fd0_100%)] p-8 shadow-[0_32px_80px_rgba(2,12,27,0.34)] sm:p-10">
         <div className="absolute -right-10 top-0 h-48 w-48 rounded-full bg-cyan-300/20 blur-3xl" />
         <div className="absolute bottom-0 left-0 h-40 w-40 rounded-full bg-blue-500/20 blur-3xl" />
@@ -135,11 +135,12 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
+
+            <RunRemindersButton />
           </div>
         </div>
       </section>
 
-      {/* KPI */}
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <Link
           href="/dashboard/clients"
@@ -208,9 +209,7 @@ export default async function DashboardPage() {
         </Link>
       </section>
 
-      {/* GRID PRINCIPALE */}
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_420px]">
-        {/* ÉCHÉANCES */}
         <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-sm">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -273,7 +272,6 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {/* PRIORITÉS */}
         <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-sm">
           <p className="text-sm font-semibold text-sky-600">Focus terrain</p>
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
