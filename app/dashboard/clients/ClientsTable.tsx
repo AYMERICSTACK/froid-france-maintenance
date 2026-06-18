@@ -35,9 +35,9 @@ function getClientStatus(count: number) {
           "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
       }
     : {
-        label: "À compléter",
+        label: "Sans contrat",
         className:
-          "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+          "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200",
       };
 }
 
@@ -415,7 +415,8 @@ export default function ClientsTable({ clients }: { clients: Client[] }) {
 
                         <td className="px-6 py-5">
                           <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-200">
-                            {contractsCount} contrat{contractsCount > 1 ? "s" : ""}
+                            {contractsCount} contrat
+                            {contractsCount > 1 ? "s" : ""}
                           </span>
                         </td>
 
