@@ -8,6 +8,7 @@ datasource db {
 
 enum UserRole {
   ADMIN
+  TECHNICIAN
   USER
 }
 
@@ -30,6 +31,18 @@ enum ReminderStatus {
   FAILED
 }
 
+enum DocumentCategory {
+  GENERAL
+  BEFORE_PHOTO
+  AFTER_PHOTO
+  REPORT
+}
+
+enum EmailLogStatus {
+  SENT
+  FAILED
+}
+
 model User {
   id            String         @id @default(cuid())
   firstName     String
@@ -41,6 +54,7 @@ model User {
   updatedAt     DateTime       @updatedAt
 
   interventions Intervention[]
+  emailLogs     EmailLog[]
 }
 
 model Client {
@@ -79,6 +93,7 @@ model Contract {
   interventions  Intervention[]
   reminders      Reminder[]
   documents      Document[]
+  emailLogs      EmailLog[]
 }
 
 model Intervention {
@@ -89,11 +104,15 @@ model Intervention {
   doneDate    DateTime?
   status      InterventionStatus @default(TO_PLAN)
   notes       String?
+  confirmationSentAt DateTime?
+  reportGeneratedAt  DateTime?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
   contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
   user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  documents Document[]
+  emailLogs EmailLog[]
 }
 
 model Reminder {
@@ -119,13 +138,62 @@ model Document {
   size       Int?
   clientId   String?
   contractId String?
+  interventionId String?
   storagePath String?
+  category   DocumentCategory @default(GENERAL)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
   client     Client?   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   contract   Contract? @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  intervention Intervention? @relation(fields: [interventionId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([contractId])
+  @@index([interventionId])
+}
+
+
+model EmailLog {
+  id             String         @id @default(cuid())
+  type           String
+  recipientEmail String
+  subject        String
+  status         EmailLogStatus @default(SENT)
+  errorMessage   String?
+  sentAt         DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  contractId     String?
+  interventionId String?
+  userId         String?
+
+  contract       Contract?      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  intervention   Intervention?  @relation(fields: [interventionId], references: [id], onDelete: Cascade)
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([contractId])
+  @@index([interventionId])
+  @@index([userId])
+  @@index([type])
+}
+
+
+model AutomationRun {
+  id           String   @id @default(cuid())
+  type         String
+  source       String
+  status       String
+  foundCount   Int      @default(0)
+  sentCount    Int      @default(0)
+  skippedCount Int      @default(0)
+  failedCount  Int      @default(0)
+  message      String?
+  startedAt    DateTime @default(now())
+  endedAt      DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
 }

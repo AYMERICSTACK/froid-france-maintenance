@@ -5,6 +5,8 @@ import { sendMaintenanceReminder } from "@/lib/email";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(request: Request) {
+  const startedAt = new Date();
+
   try {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
@@ -25,10 +27,23 @@ export async function GET(request: Request) {
       process.env.REMINDER_TO_EMAIL || process.env.CONTACT_TO_EMAIL || "";
 
     if (!reminderEmail) {
+      const message = "Aucune adresse email de rappel configurée.";
+
+      await prisma.automationRun.create({
+        data: {
+          type: "AUTO_J30",
+          source: isCronCall ? "CRON" : "MANUAL",
+          status: "FAILED",
+          message,
+          startedAt,
+          endedAt: new Date(),
+        },
+      });
+
       return NextResponse.json(
         {
           success: false,
-          message: "Aucune adresse email de rappel configurée.",
+          message,
         },
         { status: 500 },
       );
@@ -83,40 +98,84 @@ export async function GET(request: Request) {
           date: contract.nextMaintenanceDate,
         });
 
-        await prisma.reminder.create({
-          data: {
-            contractId: contract.id,
-            type: "AUTO_J30",
-            scheduledFor: contract.nextMaintenanceDate,
-            sentAt: new Date(),
-            recipientEmail: reminderEmail,
-            status: "SENT",
-          },
-        });
+        await prisma.$transaction([
+          prisma.reminder.create({
+            data: {
+              contractId: contract.id,
+              type: "AUTO_J30",
+              scheduledFor: contract.nextMaintenanceDate,
+              sentAt: new Date(),
+              recipientEmail: reminderEmail,
+              status: "SENT",
+            },
+          }),
+          prisma.emailLog.create({
+            data: {
+              contractId: contract.id,
+              type: "AUTO_J30",
+              recipientEmail: reminderEmail,
+              subject: `Rappel J-30 entretien - ${contract.client.firstName} ${contract.client.lastName}`,
+              status: "SENT",
+              sentAt: new Date(),
+              userId: isDashboardUser ? user.id : null,
+            },
+          }),
+        ]);
 
         sentCount += 1;
       } catch (error) {
         console.error("AUTO_REMINDER_SEND_ERROR", error);
 
-        await prisma.reminder.create({
-          data: {
-            contractId: contract.id,
-            type: "AUTO_J30",
-            scheduledFor: contract.nextMaintenanceDate,
-            recipientEmail: reminderEmail,
-            status: "FAILED",
-            errorMessage:
-              error instanceof Error ? error.message : "Erreur inconnue",
-          },
-        });
+        await prisma.$transaction([
+          prisma.reminder.create({
+            data: {
+              contractId: contract.id,
+              type: "AUTO_J30",
+              scheduledFor: contract.nextMaintenanceDate,
+              recipientEmail: reminderEmail,
+              status: "FAILED",
+              errorMessage:
+                error instanceof Error ? error.message : "Erreur inconnue",
+            },
+          }),
+          prisma.emailLog.create({
+            data: {
+              contractId: contract.id,
+              type: "AUTO_J30",
+              recipientEmail: reminderEmail,
+              subject: `Rappel J-30 entretien - ${contract.client.firstName} ${contract.client.lastName}`,
+              status: "FAILED",
+              errorMessage:
+                error instanceof Error ? error.message : "Erreur inconnue",
+              userId: isDashboardUser ? user.id : null,
+            },
+          }),
+        ]);
 
         failedCount += 1;
       }
     }
 
+    const message = `${sentCount} rappel(s) envoyé(s), ${skippedCount} ignoré(s), ${failedCount} échec(s).`;
+
+    await prisma.automationRun.create({
+      data: {
+        type: "AUTO_J30",
+        source: isCronCall ? "CRON" : "MANUAL",
+        status: failedCount > 0 ? "PARTIAL" : "SUCCESS",
+        foundCount: contracts.length,
+        sentCount,
+        skippedCount,
+        failedCount,
+        message,
+        startedAt,
+        endedAt: new Date(),
+      },
+    });
+
     return NextResponse.json({
       success: true,
-      message: `${sentCount} rappel(s) envoyé(s), ${skippedCount} ignoré(s), ${failedCount} échec(s).`,
+      message,
       stats: {
         found: contracts.length,
         sent: sentCount,
@@ -126,6 +185,22 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("RUN_AUTO_REMINDERS_ERROR", error);
+
+    try {
+      await prisma.automationRun.create({
+        data: {
+          type: "AUTO_J30",
+          source: "UNKNOWN",
+          status: "FAILED",
+          failedCount: 1,
+          message: error instanceof Error ? error.message : "Erreur serveur.",
+          startedAt,
+          endedAt: new Date(),
+        },
+      });
+    } catch (logError) {
+      console.error("AUTOMATION_RUN_LOG_ERROR", logError);
+    }
 
     return NextResponse.json(
       { success: false, message: "Erreur serveur." },

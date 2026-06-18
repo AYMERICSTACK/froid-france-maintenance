@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import LogoutButton from "@/components/ui/LogoutButton";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
+import { getRoleLabel } from "@/lib/permissions";
+import type { UserRole } from "@prisma/client";
 
 type DashboardTopbarProps = {
   user: {
     firstName: string;
     lastName: string;
+    role: UserRole;
   } | null;
 };
 
@@ -67,7 +70,9 @@ export default function DashboardTopbar({ user }: DashboardTopbarProps) {
                 Session
               </p>
               <p className="mt-1 text-sm font-semibold text-slate-900">
-                {user ? `${user.firstName} ${user.lastName}` : "Utilisateur"}
+                {user
+                  ? `${user.firstName} ${user.lastName} • ${getRoleLabel(user.role)}`
+                  : "Utilisateur"}
               </p>
             </div>
 

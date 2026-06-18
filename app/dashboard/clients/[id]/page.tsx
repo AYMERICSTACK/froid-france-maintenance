@@ -17,6 +17,17 @@ function formatDate(date: Date | string | null) {
   return new Date(date).toLocaleDateString("fr-FR");
 }
 
+function formatDateTime(date: Date | string | null) {
+  if (!date) return "-";
+  return new Date(date).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function getContractStatus(nextMaintenanceDate: Date | string) {
   const today = new Date();
   const nextDate = new Date(nextMaintenanceDate);
@@ -71,6 +82,19 @@ export default async function ClientDetailPage({
         orderBy: {
           nextMaintenanceDate: "asc",
         },
+        include: {
+          interventions: {
+            where: {
+              status: "PLANNED",
+              plannedDate: {
+                not: null,
+              },
+            },
+            orderBy: {
+              plannedDate: "asc",
+            },
+          },
+        },
       },
       documents: {
         orderBy: {
@@ -120,6 +144,20 @@ export default async function ClientDetailPage({
     client.contracts.length > 0
       ? client.contracts[0]?.nextMaintenanceDate
       : null;
+
+  const nextPlannedIntervention = client.contracts
+    .flatMap((contract) =>
+      contract.interventions.map((intervention) => ({
+        ...intervention,
+        contract,
+      })),
+    )
+    .filter((intervention) => intervention.plannedDate)
+    .sort(
+      (a, b) =>
+        new Date(a.plannedDate!).getTime() -
+        new Date(b.plannedDate!).getTime(),
+    )[0];
 
   return (
     <main className="space-y-6">
@@ -202,13 +240,22 @@ export default async function ClientDetailPage({
         <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-slate-500">
-              Prochain entretien
+              {nextPlannedIntervention
+                ? "Prochaine intervention"
+                : "Prochain entretien"}
             </p>
             <Clock className="h-5 w-5 text-slate-400" />
           </div>
           <p className="mt-4 text-base font-semibold text-slate-900">
-            {formatDate(nextMaintenance)}
+            {nextPlannedIntervention
+              ? formatDateTime(nextPlannedIntervention.plannedDate)
+              : formatDate(nextMaintenance)}
           </p>
+          {nextPlannedIntervention && (
+            <p className="mt-2 text-xs font-medium text-emerald-700">
+              Confirmation {nextPlannedIntervention.confirmationSentAt ? "envoyée" : "à envoyer"}
+            </p>
+          )}
           <div className="mt-5 h-1.5 w-16 rounded-full bg-emerald-500" />
         </div>
 
@@ -366,12 +413,30 @@ export default async function ClientDetailPage({
                       </div>
 
                       <div className="shrink-0 text-left sm:text-right">
-                        <p className="text-sm text-slate-500">
-                          Prochain entretien
-                        </p>
-                        <p className="mt-1 font-semibold text-slate-900">
-                          {formatDate(contract.nextMaintenanceDate)}
-                        </p>
+                        {contract.interventions[0] ? (
+                          <>
+                            <p className="text-sm text-slate-500">
+                              Intervention planifiée
+                            </p>
+                            <p className="mt-1 font-semibold text-slate-900">
+                              {formatDateTime(contract.interventions[0].plannedDate)}
+                            </p>
+                            <p className="mt-1 text-xs font-medium text-emerald-700">
+                              {contract.interventions[0].confirmationSentAt
+                                ? "Confirmation envoyée"
+                                : "Confirmation à envoyer"}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-slate-500">
+                              Prochain entretien
+                            </p>
+                            <p className="mt-1 font-semibold text-slate-900">
+                              {formatDate(contract.nextMaintenanceDate)}
+                            </p>
+                          </>
+                        )}
                       </div>
                     </Link>
                   );
@@ -416,11 +481,22 @@ export default async function ClientDetailPage({
 
               <div className="rounded-2xl bg-slate-50/80 px-4 py-4">
                 <p className="text-sm text-slate-500">
-                  Prochain entretien connu
+                  {nextPlannedIntervention
+                    ? "Prochaine intervention"
+                    : "Prochain entretien connu"}
                 </p>
                 <p className="mt-1 font-semibold text-slate-900">
-                  {formatDate(nextMaintenance)}
+                  {nextPlannedIntervention
+                    ? formatDateTime(nextPlannedIntervention.plannedDate)
+                    : formatDate(nextMaintenance)}
                 </p>
+                {nextPlannedIntervention && (
+                  <p className="mt-1 text-xs font-medium text-emerald-700">
+                    {nextPlannedIntervention.confirmationSentAt
+                      ? "Confirmation envoyée"
+                      : "Confirmation à envoyer"}
+                  </p>
+                )}
               </div>
             </div>
           </section>

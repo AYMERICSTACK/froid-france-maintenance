@@ -5,6 +5,12 @@ import { supabaseAdmin, SUPABASE_STORAGE_BUCKET } from "@/lib/supabase-admin";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+const DOCUMENT_CATEGORIES = [
+  "GENERAL",
+  "BEFORE_PHOTO",
+  "AFTER_PHOTO",
+  "REPORT",
+] as const;
 
 function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9.-_]/g, "_");
@@ -17,6 +23,8 @@ export async function POST(request: Request) {
     const file = formData.get("file");
     const clientId = formData.get("clientId");
     const contractId = formData.get("contractId");
+    const interventionId = formData.get("interventionId");
+    const category = formData.get("category") || "GENERAL";
 
     if (!(file instanceof File)) {
       return NextResponse.json(
@@ -42,11 +50,12 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!clientId && !contractId) {
+    if (!clientId && !contractId && !interventionId) {
       return NextResponse.json(
         {
           success: false,
-          message: "Le document doit être lié à un client ou un contrat.",
+          message:
+            "Le document doit être lié à un client, un contrat ou une intervention.",
         },
         { status: 400 },
       );
@@ -62,6 +71,23 @@ export async function POST(request: Request) {
     if (contractId && typeof contractId !== "string") {
       return NextResponse.json(
         { success: false, message: "contractId invalide." },
+        { status: 400 },
+      );
+    }
+
+    if (interventionId && typeof interventionId !== "string") {
+      return NextResponse.json(
+        { success: false, message: "interventionId invalide." },
+        { status: 400 },
+      );
+    }
+
+    if (
+      typeof category !== "string" ||
+      !DOCUMENT_CATEGORIES.includes(category as any)
+    ) {
+      return NextResponse.json(
+        { success: false, message: "Catégorie de document invalide." },
         { status: 400 },
       );
     }
@@ -87,6 +113,19 @@ export async function POST(request: Request) {
       if (!contract) {
         return NextResponse.json(
           { success: false, message: "Contrat introuvable." },
+          { status: 404 },
+        );
+      }
+    }
+
+    if (interventionId) {
+      const intervention = await prisma.intervention.findUnique({
+        where: { id: interventionId },
+      });
+
+      if (!intervention) {
+        return NextResponse.json(
+          { success: false, message: "Intervention introuvable." },
           { status: 404 },
         );
       }
@@ -127,6 +166,8 @@ export async function POST(request: Request) {
         size: file.size || null,
         clientId: clientId || null,
         contractId: contractId || null,
+        interventionId: interventionId || null,
+        category: category as any,
       },
     });
 

@@ -320,7 +320,7 @@ export default function ClientsTable({ clients }: { clients: Client[] }) {
                     <div className="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-3">
                       <span className="text-sm text-slate-500">Contrats</span>
                       <span className="inline-flex rounded-full bg-white px-3 py-1 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-200">
-                        {contractsCount}
+                        {contractsCount} contrat{contractsCount > 1 ? "s" : ""}
                       </span>
                     </div>
 
@@ -394,19 +394,28 @@ export default function ClientsTable({ clients }: { clients: Client[] }) {
                         </td>
 
                         <td className="px-6 py-5 text-sm text-slate-600">
-                          <div>{client.phone || "-"}</div>
-                          <div className="text-slate-400">
-                            {client.email || "-"}
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-slate-400" />
+                            <span>{client.phone || "-"}</span>
+                          </div>
+                          <div className="mt-1.5 flex items-center gap-2 text-slate-400">
+                            <Mail className="h-4 w-4" />
+                            <span className="max-w-[220px] truncate">
+                              {client.email || "-"}
+                            </span>
                           </div>
                         </td>
 
                         <td className="px-6 py-5 text-sm text-slate-700">
-                          {client.city || "-"}
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-slate-400" />
+                            <span>{client.city || "-"}</span>
+                          </div>
                         </td>
 
                         <td className="px-6 py-5">
                           <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700 ring-1 ring-inset ring-slate-200">
-                            {contractsCount}
+                            {contractsCount} contrat{contractsCount > 1 ? "s" : ""}
                           </span>
                         </td>
 
@@ -422,24 +431,27 @@ export default function ClientsTable({ clients }: { clients: Client[] }) {
                           <div className="flex justify-end gap-2">
                             <Link
                               href={`/dashboard/clients/${client.id}`}
-                              className="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+                              title="Voir la fiche client"
+                              aria-label="Voir la fiche client"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
                             >
-                              <Eye className="mr-1 h-4 w-4" />
-                              Voir
+                              <Eye className="h-4 w-4" />
                             </Link>
 
                             <Link
                               href={`/dashboard/clients/${client.id}/edit`}
-                              className="inline-flex items-center rounded-md bg-[#0b79d0] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[#0a6dbd]"
+                              title="Modifier le client"
+                              aria-label="Modifier le client"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#0b79d0]/20 bg-white text-[#0b79d0] transition hover:border-[#0b79d0]/30 hover:bg-[#0b79d0]/5"
                             >
-                              <Pencil className="mr-1 h-4 w-4" />
-                              Modifier
+                              <Pencil className="h-4 w-4" />
                             </Link>
 
                             <DeleteClientButton
                               clientId={client.id}
                               clientName={getFullName(client)}
                               contractsCount={contractsCount}
+                              variant="compact"
                             />
                           </div>
                         </td>

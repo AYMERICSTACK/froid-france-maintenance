@@ -100,35 +100,60 @@ export default function ContractForm({
       </div>
 
       {/* Inputs */}
-      <input
-        placeholder="Type équipement"
-        value={equipmentType}
-        onChange={(e) => setEquipmentType(e.target.value)}
-        required
-        className="rounded-xl border border-slate-200 px-4 py-3"
-      />
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700">
+          Type d’équipement
+        </label>
+        <input
+          placeholder="Ex : Climatisation, pompe à chaleur…"
+          value={equipmentType}
+          onChange={(e) => setEquipmentType(e.target.value)}
+          required
+          className="w-full rounded-xl border border-slate-200 px-4 py-3"
+        />
+      </div>
 
-      <input
-        placeholder="Marque"
-        value={brand}
-        onChange={(e) => setBrand(e.target.value)}
-        className="rounded-xl border border-slate-200 px-4 py-3"
-      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Marque
+          </label>
+          <input
+            placeholder="Ex : Daikin"
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 px-4 py-3"
+          />
+        </div>
 
-      <input
-        placeholder="Modèle"
-        value={model}
-        onChange={(e) => setModel(e.target.value)}
-        className="rounded-xl border border-slate-200 px-4 py-3"
-      />
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Modèle
+          </label>
+          <input
+            placeholder="Ex : Stylish"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 px-4 py-3"
+          />
+        </div>
+      </div>
 
-      <input
-        type="date"
-        value={nextMaintenanceDate}
-        onChange={(e) => setNextMaintenanceDate(e.target.value)}
-        required
-        className="rounded-xl border border-slate-200 px-4 py-3"
-      />
+      <div>
+        <label className="mb-1 block text-sm font-medium text-slate-700">
+          Date de prochaine maintenance
+        </label>
+        <input
+          type="date"
+          value={nextMaintenanceDate}
+          onChange={(e) => setNextMaintenanceDate(e.target.value)}
+          required
+          className="w-full rounded-xl border border-slate-200 px-4 py-3"
+        />
+        <p className="mt-2 rounded-xl bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700">
+          Cette date sert à déclencher le rappel automatique J-30 envoyé à Froid France.
+        </p>
+      </div>
 
       {error && (
         <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-600">

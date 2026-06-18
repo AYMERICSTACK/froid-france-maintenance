@@ -18,6 +18,7 @@ export default function InterventionForm({
   const router = useRouter();
 
   const [date, setDate] = useState("");
+  const [time, setTime] = useState("09:00");
   const [notes, setNotes] = useState("");
   const [checklist, setChecklist] = useState<string[]>([]);
   const [clientSignature, setClientSignature] = useState("");
@@ -44,7 +45,7 @@ export default function InterventionForm({
         },
         body: JSON.stringify({
           contractId,
-          plannedDate: date,
+          plannedDate: `${date}T${time}`,
           notes: finalNotes,
         }),
       });
@@ -59,6 +60,7 @@ export default function InterventionForm({
 
       router.refresh();
       setDate("");
+      setTime("09:00");
       setNotes("");
       setChecklist([]);
       setClientSignature("");
@@ -82,30 +84,49 @@ export default function InterventionForm({
           Programmer une intervention
         </h2>
         <p className="mt-2 text-sm text-slate-500">
-          Ajoutez une date prévue et une note interne pour organiser le suivi.
+          Choisissez directement la date et l’heure du rendez-vous convenu avec le client.
         </p>
       </div>
 
       <div className="grid gap-4">
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
-            Date prévue
-          </label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-[#0b79d0] focus:bg-white focus:ring-4 focus:ring-[#0b79d0]/10"
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Date du rendez-vous
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-[#0b79d0] focus:bg-white focus:ring-4 focus:ring-[#0b79d0]/10"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Heure du rendez-vous
+            </label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              required
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-[#0b79d0] focus:bg-white focus:ring-4 focus:ring-[#0b79d0]/10"
+            />
+          </div>
         </div>
+
+        <p className="rounded-2xl bg-[#0b79d0]/8 px-4 py-3 text-sm font-medium text-[#0b79d0] ring-1 ring-[#0b79d0]/10">
+          Cette date correspond au rendez-vous terrain. Elle sera reprise dans l’email de confirmation envoyé au client.
+        </p>
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">
-            Notes
+            Notes internes
           </label>
           <textarea
-            placeholder="Ajouter une note si besoin"
+            placeholder="Ex : maintenance annuelle, accès par le portail, appeler avant d’arriver…"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={4}

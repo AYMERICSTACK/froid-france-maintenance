@@ -2,6 +2,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import BackButton from "@/components/ui/BackButton";
+import SendConfirmationButton from "@/components/interventions/SendConfirmationButton";
+import InterventionPhotosSection from "@/components/interventions/InterventionPhotosSection";
+import ReportActions from "@/components/interventions/ReportActions";
 import {
   CalendarDays,
   Clock3,
@@ -65,6 +68,13 @@ export default async function EditInterventionPage({
         include: {
           client: true,
         },
+      },
+      documents: {
+        orderBy: { createdAt: "desc" },
+      },
+      emailLogs: {
+        orderBy: { createdAt: "desc" },
+        take: 8,
       },
     },
   });
@@ -270,6 +280,11 @@ export default async function EditInterventionPage({
             </div>
           </section>
 
+          <InterventionPhotosSection
+            interventionId={intervention.id}
+            photos={intervention.documents}
+          />
+
           {/* COMPTE-RENDU */}
           <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-sm">
             <div className="mb-6">
@@ -355,6 +370,24 @@ export default async function EditInterventionPage({
                 Enregistrer les modifications
               </button>
 
+              <SendConfirmationButton
+                interventionId={intervention.id}
+                disabledReason={
+                  !intervention.contract.client.email
+                    ? "Ajoutez un email sur la fiche client avant d’envoyer la confirmation."
+                    : !intervention.plannedDate
+                      ? "Ajoutez une date et une heure avant d’envoyer la confirmation."
+                      : undefined
+                }
+              />
+
+              {intervention.confirmationSentAt && (
+                <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+                  Confirmation déjà envoyée :{" "}
+                  {formatDate(intervention.confirmationSentAt)}
+                </p>
+              )}
+
               <Link
                 href={`/dashboard/contracts/${intervention.contractId}`}
                 className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 px-5 py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
@@ -367,13 +400,68 @@ export default async function EditInterventionPage({
           <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <FileText className="h-5 w-5 text-slate-400" />
-              <h3 className="text-lg font-bold text-slate-900">Conseil UX</h3>
+              <h3 className="text-lg font-bold text-slate-900">Rapport PDF</h3>
             </div>
 
-            <p className="text-sm leading-6 text-slate-500">
-              Utilise la checklist pour les actions standard, puis complète les
-              notes uniquement pour les anomalies, remarques ou recommandations.
+            <p className="mb-4 text-sm leading-6 text-slate-500">
+              Générez un rapport d’intervention simple avec les informations
+              client, l’équipement, les notes et le nombre de photos avant /
+              après.
             </p>
+
+            <ReportActions interventionId={intervention.id} />
+
+            {intervention.reportGeneratedAt && (
+              <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500">
+                Dernier rapport généré :{" "}
+                {formatDate(intervention.reportGeneratedAt)}
+              </p>
+            )}
+          </section>
+
+          <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <MailCheckIcon />
+              <h3 className="text-lg font-bold text-slate-900">
+                Historique emails
+              </h3>
+            </div>
+
+            {intervention.emailLogs.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                Aucun email envoyé pour cette intervention.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {intervention.emailLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {log.subject}
+                      </p>
+                      <span
+                        className={
+                          log.status === "SENT"
+                            ? "rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100"
+                            : "rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-100"
+                        }
+                      >
+                        {log.status === "SENT" ? "Envoyé" : "Échec"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      À {log.recipientEmail} •{" "}
+                      {log.sentAt
+                        ? formatDate(log.sentAt)
+                        : formatDate(log.createdAt)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       </form>
@@ -411,4 +499,8 @@ function QuickInfo({ label, value }: { label: string; value: string }) {
       <p className="mt-1 font-semibold text-slate-900">{value}</p>
     </div>
   );
+}
+
+function MailCheckIcon() {
+  return <span className="text-lg">✉️</span>;
 }
